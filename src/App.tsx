@@ -13,11 +13,13 @@ interface IAppState {
   timers: ITimer[];
 }
 
-export default class App extends React.PureComponent<{}, IAppState> {
+interface IAppProps { }
+
+export default class App extends React.PureComponent<IAppProps, IAppState> {
   private timer: NodeJS.Timer;
   private audio = React.createRef<Audio>();
 
-  constructor(props: {}) {
+  constructor(props: IAppProps) {
     super(props);
     this.timer = setInterval(this.timerCallback, 1000);
   }
@@ -40,6 +42,8 @@ export default class App extends React.PureComponent<{}, IAppState> {
       }
     ]
   };
+
+  private logs: string[] = [];
 
   private getNextTimer = () => {
     if (this.state.currentTimerIndex >= this.state.timers.length - 1 || this.state.currentTimerIndex < 0) {
@@ -95,6 +99,18 @@ export default class App extends React.PureComponent<{}, IAppState> {
 
   private getResetTimersState = () => (this.state.timers.map(t => ({ ...t, current: 0 })));
 
+  public logStuff(prevProps: IAppProps, prevState: IAppState) {
+    if (prevState.playing !== this.state.playing || prevState.currentTimerIndex !== this.state.currentTimerIndex) {
+      const log = `${JSON.stringify(this.state)}`;
+      this.logs.push(log);
+      console.log(`log: `, this.state);
+    }
+  }
+
+  public componentDidUpdate(prevProps: IAppProps, prevState: IAppState) {
+    this.logStuff(prevProps, prevState);
+  }
+
   public render() {
     const currentTimer = this.state.timers[this.state.currentTimerIndex];
     return (
@@ -103,10 +119,10 @@ export default class App extends React.PureComponent<{}, IAppState> {
         <button onClick={this.togglePlay}>{this.state.playing ? "Pause" : "Play"}</button>
         <button onClick={this.reset}>Reset</button>
         <button onClick={this.next}>Next</button>
-        {this.state.timers.map((t, i) =>
+        {this.state.timers.map((timer, i) =>
           <React.Fragment key={i}>
             <div />
-            <Timer item={t} active={i === this.state.currentTimerIndex} />
+            <Timer item={timer} active={i === this.state.currentTimerIndex} />
           </React.Fragment>
         )}
         <Title on={this.state.playing} string={`${getHumanFormatedTime(currentTimer.duration - currentTimer.current)} (${currentTimer.name})`} />
