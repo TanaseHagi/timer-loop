@@ -1,17 +1,14 @@
 import * as React from 'react';
-import { ITimer } from "./@types";
+import { ITimer, ITimerState } from "./@types";
 import { Timer, getHumanFormatedTime } from "./Timer"
 import { Audio } from "./Audio";
 import { Title } from "./Title";
+import { Logger } from "./Logger";
 
 import bell from "./assets/sounds/bell.mp3";
 import bellx2 from "./assets/sounds/bellx2.mp3";
 
-interface IAppState {
-  currentTimerIndex: number;
-  playing: boolean;
-  timers: ITimer[];
-}
+interface IAppState extends ITimerState {}
 
 interface IAppProps { }
 
@@ -42,8 +39,6 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
       }
     ]
   };
-
-  private logs: string[] = [];
 
   private getNextTimer = () => {
     if (this.state.currentTimerIndex >= this.state.timers.length - 1 || this.state.currentTimerIndex < 0) {
@@ -99,18 +94,6 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
 
   private getResetTimersState = () => (this.state.timers.map(t => ({ ...t, current: 0 })));
 
-  public logStuff(prevProps: IAppProps, prevState: IAppState) {
-    if (prevState.playing !== this.state.playing || prevState.currentTimerIndex !== this.state.currentTimerIndex) {
-      const log = `${JSON.stringify(this.state)}`;
-      this.logs.push(log);
-      console.log(`log: `, this.state);
-    }
-  }
-
-  public componentDidUpdate(prevProps: IAppProps, prevState: IAppState) {
-    this.logStuff(prevProps, prevState);
-  }
-
   public render() {
     const currentTimer = this.state.timers[this.state.currentTimerIndex];
     return (
@@ -125,6 +108,7 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
             <Timer item={timer} active={i === this.state.currentTimerIndex} />
           </React.Fragment>
         )}
+        <Logger timerState={this.state}/>
         <Title on={this.state.playing} string={`${getHumanFormatedTime(currentTimer.duration - currentTimer.current)} (${currentTimer.name})`} />
       </>
     );
