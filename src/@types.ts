@@ -4,3 +4,9 @@ export interface ITimer {
     current: number;
     audioURL: string;
 }
+
+export interface ITimerState {
+    currentTimerIndex: number;
+    playing: boolean;
+    timers: ITimer[];
+}
