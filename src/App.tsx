@@ -8,20 +8,63 @@ import { Logger } from "./Logger";
 import bell from "./assets/sounds/bell.mp3";
 import bellx2 from "./assets/sounds/bellx2.mp3";
 
-interface IAppState extends ITimerState {}
+export interface IAppState extends ITimerState { }
 
 interface IAppProps { }
 
 export default class App extends React.PureComponent<IAppProps, IAppState> {
-  private timer: NodeJS.Timer;
-  private audio = React.createRef<Audio>();
 
-  constructor(props: IAppProps) {
-    super(props);
-    this.timer = setInterval(this.timerCallback, 1000);
+  static getResetTimersState = (state: IAppState, props?: IAppProps) => (state.timers.map(t => ({ ...t, current: 0 })));
+
+  static getNextTimer = (state: IAppState, props?: IAppProps) => {
+    if (state.currentTimerIndex >= state.timers.length - 1 || state.currentTimerIndex < 0) {
+      return 0;
+    }
+    return state.currentTimerIndex + 1;
   }
 
-  public state: IAppState = {
+  static getPreviousTimer = (state: IAppState, props?: IAppProps) => {
+    if (state.currentTimerIndex <= 0) {
+      return state.timers.length - 1;
+    }
+    return state.currentTimerIndex - 1;
+  }
+
+  static goToNextTimer = (state: IAppState, props?: IAppProps) => ({
+    currentTimerIndex: App.getNextTimer(state, props),
+    timers: App.getResetTimersState(state, props),
+    playing: true,
+  })
+
+  static goToPreviousTimer = (state: IAppState, props?: IAppProps) => ({
+    currentTimerIndex: App.getPreviousTimer(state, props),
+    timers: App.getResetTimersState(state, props),
+    playing: true,
+  })
+
+  static incrementCurrentTimer = (state: IAppState, props?: IAppProps) => {
+    const timer = state.timers[state.currentTimerIndex];
+    return ({
+      timers: state.timers.map((t, i) => {
+        if (i === state.currentTimerIndex) {
+          return ({ ...t, current: Math.min(timer.current + 1000, timer.duration) })
+        }
+        return t;
+      })
+    })
+  }
+
+  static getResetTimerState = (state: IAppState, props?: IAppProps) => ({
+    currentTimerIndex: 0,
+    playing: false,
+    timers: App.getResetTimersState(state, props),
+  })
+
+  static togglePlayState = (state: IAppState, props?: IAppProps) => ({
+    playing: !state.playing,
+  });
+
+  static getInitialState = (): IAppState => ({
     currentTimerIndex: 0,
     playing: false,
     timers: [
@@ -38,14 +81,17 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
         audioURL: bellx2,
       }
     ]
-  };
+  });
 
-  private getNextTimer = () => {
-    if (this.state.currentTimerIndex >= this.state.timers.length - 1 || this.state.currentTimerIndex < 0) {
-      return 0;
-    }
-    return this.state.currentTimerIndex + 1;
+  private timer: NodeJS.Timer;
+  private audio = React.createRef<Audio>();
+
+  constructor(props: IAppProps) {
+    super(props);
+    this.timer = setInterval(this.timerCallback, 1000);
   }
+
+  public state: IAppState = App.getInitialState();
 
   private timerCallback = () => {
     if (!this.state.playing) {
@@ -54,51 +100,34 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
     const timer = this.state.timers[this.state.currentTimerIndex];
     if (timer.current === timer.duration) {
       this.audio.current != null ? this.audio.current.play() : null;
-      this.setState({
-        currentTimerIndex: this.getNextTimer(),
-        timers: this.getResetTimersState(),
-      });
+      this.setState(App.goToNextTimer);
       return;
     }
-    this.setState({
-      timers: this.state.timers.map((t, i) => {
-        if (i === this.state.currentTimerIndex) {
-          return ({ ...t, current: Math.min(timer.current + 1000, timer.duration) })
-        }
-        return t;
-      })
-    });
+    this.setState(App.incrementCurrentTimer);
   }
 
   private togglePlay = () => {
-    this.setState({
-      playing: !this.state.playing,
-    });
+    this.setState(App.togglePlayState);
   }
 
   private reset = () => {
-    this.setState({
-      currentTimerIndex: 0,
-      playing: false,
-      timers: this.getResetTimersState(),
-    });
+    this.setState(App.getResetTimerState);
   }
 
   private next = () => {
-    this.setState({
-      currentTimerIndex: this.getNextTimer(),
-      playing: true,
-      timers: this.getResetTimersState(),
-    });
+    this.setState(App.goToNextTimer);
   }
 
-  private getResetTimersState = () => (this.state.timers.map(t => ({ ...t, current: 0 })));
+  private previous = () => {
+    this.setState(App.goToPreviousTimer);
+  }
 
   public render() {
     const currentTimer = this.state.timers[this.state.currentTimerIndex];
     return (
       <>
         <Audio src={currentTimer.audioURL} ref={this.audio} />
+        <button onClick={this.previous}>Previous</button>
         <button onClick={this.togglePlay}>{this.state.playing ? "Pause" : "Play"}</button>
         <button onClick={this.reset}>Reset</button>
         <button onClick={this.next}>Next</button>
@@ -108,7 +137,7 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
             <Timer item={timer} active={i === this.state.currentTimerIndex} />
           </React.Fragment>
         )}
-        <Logger timerState={this.state}/>
+        <Logger timerState={this.state} />
         <Title on={this.state.playing} string={`${getHumanFormatedTime(currentTimer.duration - currentTimer.current)} (${currentTimer.name})`} />
       </>
     );
