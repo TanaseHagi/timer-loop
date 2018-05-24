@@ -7,11 +7,14 @@ import previousButton from "./assets/buttons/step-backward.svg";
 import nextButton from "./assets/buttons/step-forward.svg";
 import addButton from "./assets/buttons/plus.svg";
 import removeButton from "./assets/buttons/times-circle.svg";
+import editButton from "./assets/buttons/edit.svg";
+import saveButton from "./assets/buttons/save.svg";
 
 interface IButtonProps {
     type: ButtonTypeEnum;
     active?: boolean;
     style?: React.CSSProperties;
+    disabled?: boolean;
     onClick?(e?: React.MouseEvent<HTMLElement>): void;
 }
 
@@ -22,6 +25,7 @@ export enum ButtonTypeEnum {
     NEXT,
     ADD,
     REMOVE,
+    EDIT,
 };
 
 const style: React.CSSProperties = {
@@ -30,7 +34,6 @@ const style: React.CSSProperties = {
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
     display: "inline-block",
-    cursor: "pointer",
 };
 
 const getURL = (type: ButtonTypeEnum, active = false) => {
@@ -53,6 +56,9 @@ const getURL = (type: ButtonTypeEnum, active = false) => {
         case ButtonTypeEnum.REMOVE:
             return removeButton;
 
+        case ButtonTypeEnum.EDIT:
+            return active ? saveButton : editButton;
+
         default:
             return "";
     }
@@ -63,10 +69,12 @@ export const Button: React.StatelessComponent<IButtonProps> = (props) => {
         <i
             style={{
                 backgroundImage: `url("${getURL(props.type, props.active)}")`,
+                opacity: props.disabled ? 0.3 : 1,
+                cursor: props.disabled ? "auto" : "pointer",
                 ...style,
                 ...props.style,
             }}
-            onClick={props.onClick}
+            onClick={!props.disabled ? props.onClick : undefined}
         >
         </i>
     )
@@ -74,4 +82,5 @@ export const Button: React.StatelessComponent<IButtonProps> = (props) => {
 
 Button.defaultProps = {
     active: false,
+    disabled: false,
 }
