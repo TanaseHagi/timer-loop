@@ -2,10 +2,17 @@ import * as React from "react";
 import { ITimer } from "./@types";
 import { Button, ButtonTypeEnum } from "./Button";
 
+export enum ChangeType {
+  NAME,
+  DURATION,
+}
+
 interface ITimerProps {
   item: ITimer;
   active?: boolean;
+  editing?: boolean;
   onRemove?(): void;
+  onChange?(type: ChangeType): (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const getHumanFormatedTime = (milliseconds: number) => {
@@ -34,14 +41,25 @@ const style: React.CSSProperties = {
 
 const buttonStyle: React.CSSProperties = {
   position: "absolute",
-  right: "-1em",
-  top: "-1em",
-  backgroundColor: "white",
+  height: "100%",
+  right: "1em",
+  top: "0em",
 }
 
-export const Timer: React.StatelessComponent<ITimerProps> = props => (
+const TimerView: React.StatelessComponent<ITimerProps> = props => (
   <div style={{ outline: props.active ? "1px solid gold" : "", ...style }}>
     <div>{props.item.name}</div>
+    <div>
+      {getHumanFormatedTime(props.item.current)}/{getHumanFormatedTime(props.item.duration)}
+    </div>
+  </div>
+);
+
+const TimerEdit: React.StatelessComponent<ITimerProps> = props => (
+  <div style={{ outline: props.active ? "1px solid gold" : "", ...style }}>
+    <div>
+      <input value={props.item.name} onChange={props.onChange && props.onChange(ChangeType.NAME)} />
+    </div>
     <div>
       {getHumanFormatedTime(props.item.current)}/{getHumanFormatedTime(props.item.duration)}
     </div>
@@ -49,6 +67,14 @@ export const Timer: React.StatelessComponent<ITimerProps> = props => (
   </div>
 );
 
+export const Timer: React.StatelessComponent<ITimerProps> = props =>
+  props.editing
+    ? <TimerEdit {...props} />
+    : <TimerView {...props} />;
+
 Timer.defaultProps = {
   active: false,
+  editing: false,
+  onChange: () => () => { },
+  onRemove: () => { },
 }
