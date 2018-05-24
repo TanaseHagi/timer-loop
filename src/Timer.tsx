@@ -1,9 +1,11 @@
 import * as React from "react";
 import { ITimer } from "./@types";
+import { Button, ButtonTypeEnum } from "./Button";
 
 interface ITimerProps {
   item: ITimer;
   active?: boolean;
+  onRemove?(): void;
 }
 
 export const getHumanFormatedTime = (milliseconds: number) => {
@@ -21,12 +23,29 @@ const getMilliseconds = (time: string) => {
   return (parseInt(t[0]) * 1000 + parseInt(t[1]) * 60 * 1000 + parseInt(t[2]) * 60 * 60 * 1000);
 }
 
+const style: React.CSSProperties = {
+  display: "inline-block",
+  padding: "1em",
+  width: "100%",
+  margin: "1em 0",
+  boxShadow: "0px 1px 11px -1px #00000061",
+  position: "relative",
+}
+
+const buttonStyle: React.CSSProperties = {
+  position: "absolute",
+  right: "-1em",
+  top: "-1em",
+  backgroundColor: "white",
+}
+
 export const Timer: React.StatelessComponent<ITimerProps> = props => (
-  <div style={{ outline: props.active ? "1px solid gold" : "", display: "inline-block" }}>
+  <div style={{ outline: props.active ? "1px solid gold" : "", ...style }}>
     <div>{props.item.name}</div>
     <div>
       {getHumanFormatedTime(props.item.current)}/{getHumanFormatedTime(props.item.duration)}
     </div>
+    <Button type={ButtonTypeEnum.REMOVE} onClick={props.onRemove} style={buttonStyle} />
   </div>
 );
 

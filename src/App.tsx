@@ -4,6 +4,7 @@ import { Timer, getHumanFormatedTime } from "./Timer"
 import { Audio } from "./Audio";
 import { Title } from "./Title";
 import { Logger } from "./Logger";
+import { Button, ButtonTypeEnum } from "./Button";
 
 import bell from "./assets/sounds/bell.mp3";
 import bellx2 from "./assets/sounds/bellx2.mp3";
@@ -14,16 +15,16 @@ interface IAppProps { }
 
 export default class App extends React.PureComponent<IAppProps, IAppState> {
 
-  static getResetTimersState = (state: IAppState, props?: IAppProps) => (state.timers.map(t => ({ ...t, current: 0 })));
+  static getResetTimers = (state: IAppState, props?: IAppProps): ITimer[] => (state.timers.map(t => ({ ...t, current: 0 })));
 
-  static getNextTimer = (state: IAppState, props?: IAppProps) => {
+  static getNextTimerIndex = (state: IAppState, props?: IAppProps) => {
     if (state.currentTimerIndex >= state.timers.length - 1 || state.currentTimerIndex < 0) {
       return 0;
     }
     return state.currentTimerIndex + 1;
   }
 
-  static getPreviousTimer = (state: IAppState, props?: IAppProps) => {
+  static getPreviousTimerIndex = (state: IAppState, props?: IAppProps) => {
     if (state.currentTimerIndex <= 0) {
       return state.timers.length - 1;
     }
@@ -31,14 +32,14 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
   }
 
   static goToNextTimer = (state: IAppState, props?: IAppProps) => ({
-    currentTimerIndex: App.getNextTimer(state, props),
-    timers: App.getResetTimersState(state, props),
+    currentTimerIndex: App.getNextTimerIndex(state, props),
+    timers: App.getResetTimers(state, props),
     playing: true,
   })
 
   static goToPreviousTimer = (state: IAppState, props?: IAppProps) => ({
-    currentTimerIndex: App.getPreviousTimer(state, props),
-    timers: App.getResetTimersState(state, props),
+    currentTimerIndex: App.getPreviousTimerIndex(state, props),
+    timers: App.getResetTimers(state, props),
     playing: true,
   })
 
@@ -50,19 +51,35 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
           return ({ ...t, current: Math.min(timer.current + 1000, timer.duration) })
         }
         return t;
-      })
-    })
+      }),
+    });
   }
 
   static getResetTimerState = (state: IAppState, props?: IAppProps) => ({
     currentTimerIndex: 0,
     playing: false,
-    timers: App.getResetTimersState(state, props),
+    timers: App.getResetTimers(state, props),
   })
 
   static togglePlayState = (state: IAppState, props?: IAppProps) => ({
     playing: !state.playing,
   });
+
+  static addNewTimer = (state: IAppState, props?: IAppProps) => ({
+    timers: [
+      ...state.timers,
+      {
+        name: "new",
+        duration: 15 * 60 * 1000, // 15 min
+        current: 0,
+        audioURL: bell,
+      }
+    ],
+  })
+
+  static removeTimer = (index: number) => (state: IAppState, props?: IAppProps) => ({
+    timers: state.timers.filter((t, i) => i !== index),
+  })
 
   static getInitialState = (): IAppState => ({
     currentTimerIndex: 0,
@@ -106,40 +123,53 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
     this.setState(App.incrementCurrentTimer);
   }
 
-  private togglePlay = () => {
-    this.setState(App.togglePlayState);
+  private togglePlay = () => this.setState(App.togglePlayState);
+
+  private reset = () => this.setState(App.getResetTimerState);
+
+  private next = () => this.setState(App.goToNextTimer);
+
+  private previous = () => this.setState(App.goToPreviousTimer);
+
+  private add = () => this.setState(App.addNewTimer);
+
+  private remove = (index: number) => () => {
+    if (this.state.timers.length === 1) {
+      return;
+    }
+    if (index === this.state.currentTimerIndex) {
+      this.setState(App.getResetTimerState);
+    }
+    this.setState(App.removeTimer(index));
   }
 
-  private reset = () => {
-    this.setState(App.getResetTimerState);
-  }
-
-  private next = () => {
-    this.setState(App.goToNextTimer);
-  }
-
-  private previous = () => {
-    this.setState(App.goToPreviousTimer);
-  }
+  private buttonStyle: React.CSSProperties = {
+    flex: 1,
+  };
 
   public render() {
     const currentTimer = this.state.timers[this.state.currentTimerIndex];
     return (
-      <>
-        <Audio src={currentTimer.audioURL} ref={this.audio} />
-        <button onClick={this.previous}>Previous</button>
-        <button onClick={this.togglePlay}>{this.state.playing ? "Pause" : "Play"}</button>
-        <button onClick={this.reset}>Reset</button>
-        <button onClick={this.next}>Next</button>
+      <div style={{ margin: "auto", width: "250px", marginTop: "2em" }}>
+        <div style={{ display: "flex", padding: "1em", width: "100%", }}>
+          <Audio src={currentTimer.audioURL} ref={this.audio} />
+          <Button type={ButtonTypeEnum.PREVIOUS} onClick={this.previous} style={this.buttonStyle} />
+          <Button type={ButtonTypeEnum.PLAY} onClick={this.togglePlay} active={this.state.playing} style={this.buttonStyle} />
+          <Button type={ButtonTypeEnum.STOP} onClick={this.reset} style={this.buttonStyle} />
+          <Button type={ButtonTypeEnum.NEXT} onClick={this.next} style={this.buttonStyle} />
+        </div>
         {this.state.timers.map((timer, i) =>
           <React.Fragment key={i}>
             <div />
-            <Timer item={timer} active={i === this.state.currentTimerIndex} />
+            <Timer item={timer} active={i === this.state.currentTimerIndex} onRemove={this.remove(i)} />
           </React.Fragment>
         )}
         <Logger timerState={this.state} />
         <Title on={this.state.playing} string={`${getHumanFormatedTime(currentTimer.duration - currentTimer.current)} (${currentTimer.name})`} />
-      </>
+        <div style={{ display: "flex", padding: "1em", width: "100%", }}>
+          <Button type={ButtonTypeEnum.ADD} onClick={this.add} style={this.buttonStyle} />
+        </div>
+      </div>
     );
   }
 }

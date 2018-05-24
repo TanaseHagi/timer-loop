@@ -13,10 +13,10 @@ it("getPreviousTimer", () => {
   const length = state.timers.length;
   
   state.currentTimerIndex = 0;
-  let previous = App.getPreviousTimer(state);
+  let previous = App.getPreviousTimerIndex(state);
   expect(previous).toEqual(length - 1);
   
   state.currentTimerIndex = 1;
-  previous = App.getPreviousTimer(state);
+  previous = App.getPreviousTimerIndex(state);
   expect(previous).toEqual(0);
 });
