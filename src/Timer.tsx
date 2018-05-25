@@ -1,6 +1,8 @@
 import * as React from "react";
 import { ITimer } from "./@types";
 import { Button, ButtonTypeEnum } from "./Button";
+import { getHumanFormatedTime } from "./CounterUtil";
+import { CounterEditor } from "./CounterEditor";
 
 export enum ChangeType {
   NAME,
@@ -12,22 +14,7 @@ interface ITimerProps {
   active?: boolean;
   editing?: boolean;
   onRemove?(): void;
-  onChange?(type: ChangeType): (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-export const getHumanFormatedTime = (milliseconds: number) => {
-  const t = parseInt(`${milliseconds / 1000}`);
-  let s = ((t % 60));
-  let m = Math.floor(t / 60);
-  let h = Math.floor(t / 3600);
-  s = (s >= 60) ? 0 : s;
-  m = (m >= 60) ? 0 : m;
-  return (`${h < 10 ? "0" : ""}${h}:${m < 10 ? "0" : ""}${m}:${s < 10 ? "0" : ""}${s}`);
-}
-
-const getMilliseconds = (time: string) => {
-  const t = time.split(":").reverse();
-  return (parseInt(t[0]) * 1000 + parseInt(t[1]) * 60 * 1000 + parseInt(t[2]) * 60 * 60 * 1000);
+  onChange?(type: ChangeType): (e: React.ChangeEvent<HTMLInputElement> | number) => void;
 }
 
 const style: React.CSSProperties = {
@@ -46,23 +33,37 @@ const buttonStyle: React.CSSProperties = {
   top: "0em",
 }
 
+const nameStyle: React.CSSProperties = {
+  fontSize: "1.3em",
+}
+
+const durationStyle: React.CSSProperties = {
+  fontSize: "2em",
+}
+
+const inputStyle: React.CSSProperties = {
+  border: 0,
+  padding: 0,
+  margin: 0,
+  outline: 0,
+};
+
 const TimerView: React.StatelessComponent<ITimerProps> = props => (
   <div style={{ outline: props.active ? "1px solid gold" : "", ...style }}>
-    <div>{props.item.name}</div>
-    <div>
-      {getHumanFormatedTime(props.item.current)}/{getHumanFormatedTime(props.item.duration)}
+    <div style={nameStyle}>{props.item.name}</div>
+    <div style={durationStyle}>
+      {getHumanFormatedTime(props.item.duration - props.item.current)}
     </div>
+    {/* <div>
+      {getHumanFormatedTime(props.item.current)}/{getHumanFormatedTime(props.item.duration)}
+    </div> */}
   </div>
 );
 
 const TimerEdit: React.StatelessComponent<ITimerProps> = props => (
   <div style={{ outline: props.active ? "1px solid gold" : "", ...style }}>
-    <div>
-      <input value={props.item.name} onChange={props.onChange && props.onChange(ChangeType.NAME)} />
-    </div>
-    <div>
-      {getHumanFormatedTime(props.item.current)}/{getHumanFormatedTime(props.item.duration)}
-    </div>
+    <input value={props.item.name} onChange={props.onChange && props.onChange(ChangeType.NAME)} style={{ ...nameStyle, ...inputStyle, width: "100%" }}/>
+    <CounterEditor milliseconds={props.item.duration} onChange={props.onChange && props.onChange(ChangeType.DURATION)} />
     <Button type={ButtonTypeEnum.REMOVE} onClick={props.onRemove} style={buttonStyle} />
   </div>
 );

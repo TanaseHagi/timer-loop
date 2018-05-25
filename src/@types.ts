@@ -10,3 +10,9 @@ export interface ITimerState {
     playing: boolean;
     timers: ITimer[];
 }
+
+export interface ICounterObject {
+    s: number;
+    m: number;
+    h: number;
+}

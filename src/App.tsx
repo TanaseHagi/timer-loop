@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ITimer, ITimerState } from "./@types";
-import { Timer, ChangeType, getHumanFormatedTime } from "./Timer"
+import { Timer, ChangeType } from "./Timer"
+import { getHumanFormatedTime } from "./CounterUtil";
 import { Audio } from "./Audio";
 import { Title } from "./Title";
 import { Logger } from "./Logger";
@@ -92,24 +93,30 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
   }
 
   static getInitialState = (): IAppState => ({
+    ...App.getDefaultState(),
+  });
+
+  static getDefaultState = (): IAppState => ({
     editing: false,
     currentTimerIndex: 0,
     playing: false,
-    timers: [
-      {
-        name: "work",
-        duration: 15 * 60 * 1000, // 15 min
-        current: 0,
-        audioURL: bell,
-      },
-      {
-        name: "pause",
-        duration: 5 * 60 * 1000, // 5 min
-        current: 0,
-        audioURL: bellx2,
-      }
-    ]
+    timers: App.getDefaultTimers(),
   });
+
+  static getDefaultTimers = (): ITimer[] => ([
+    {
+      name: "work",
+      duration: 15 * 60 * 1000, // 15 min
+      current: 0,
+      audioURL: bell,
+    },
+    {
+      name: "pause",
+      duration: 5 * 60 * 1000, // 5 min
+      current: 0,
+      audioURL: bellx2,
+    }
+  ]);
 
   static newCounter = 1;
 
@@ -159,10 +166,14 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
 
   private remove = (index: number) => () => this.setState(App.removeTimer(index));
 
-  private change = (index: number) => (type: ChangeType) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  private change = (index: number) => (type: ChangeType) => (e: React.ChangeEvent<HTMLInputElement> | number) => {
     switch (type) {
       case ChangeType.NAME:
-        this.setState(App.changeTimer(index, { name: e.target.value }));
+        typeof e !== "number" && this.setState(App.changeTimer(index, { name: e.target.value }));
+        return;
+
+      case ChangeType.DURATION:
+        typeof e === "number" && this.setState(App.changeTimer(index, { duration: e }));
         return;
 
       default:
