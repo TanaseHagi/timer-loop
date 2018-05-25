@@ -6,7 +6,7 @@ import { Audio } from "./Audio";
 import { Title } from "./Title";
 import { Logger } from "./Logger";
 import { Button, ButtonTypeEnum } from "./Button";
-
+import { ControllerClass } from "./Controller";
 import bell from "./assets/sounds/bell.mp3";
 import bellx2 from "./assets/sounds/bellx2.mp3";
 
@@ -14,7 +14,9 @@ export interface IAppState extends ITimerState {
   editing: boolean;
 }
 
-interface IAppProps { }
+interface IAppProps {
+  controller: ControllerClass;
+}
 
 export default class App extends React.PureComponent<IAppProps, IAppState> {
 
@@ -135,7 +137,17 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
     this.timer = setInterval(this.timerCallback, 1000);
   }
 
-  public state: IAppState = App.getInitialState();
+  private getInitialState = () => {
+    const timers = this.props.controller.getTimers();
+    const state = App.getInitialState();
+    if (timers.length > 0) {
+      state.timers = timers;
+      return state;
+    }
+    return state;
+  }
+
+  public state: IAppState = this.getInitialState();
 
   public self = App;
 
@@ -154,7 +166,7 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
 
   private togglePlay = () => this.setState(App.togglePlayState);
 
-  private toggleEdit = () => this.setState(App.toggleEditState);
+  private toggleEdit = () => this.setState(App.toggleEditState, () => {!this.state.editing ? this.props.controller.setTimers(this.state.timers) : null});
 
   private stop = () => this.setState(App.getResetTimerState);
 
