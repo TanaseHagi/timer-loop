@@ -120,14 +120,15 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
     }
   ]);
 
-  static newCounter = 1;
-
-  static getNewTimer = (): ITimer => ({
-    name: `new ${App.newCounter++}`,
-    duration: 15 * 60 * 1000, // 15 min
-    current: 0,
-    audioURL: bell,
-  })
+  static getNewTimer = (() => {
+    let newCounter = 1;
+    return ((): ITimer => ({
+      name: `new ${newCounter++}`,
+      duration: 15 * 60 * 1000, // 15 min
+      current: 0,
+      audioURL: bell,
+    }));
+  })();
 
   private timer: NodeJS.Timer;
   private audio = React.createRef<Audio>();
@@ -166,7 +167,7 @@ export default class App extends React.PureComponent<IAppProps, IAppState> {
 
   private togglePlay = () => this.setState(App.togglePlayState);
 
-  private toggleEdit = () => this.setState(App.toggleEditState, () => {!this.state.editing ? this.props.controller.setTimers(this.state.timers) : null});
+  private toggleEdit = () => this.setState(App.toggleEditState, () => { !this.state.editing ? this.props.controller.setTimers(this.state.timers) : null });
 
   private stop = () => this.setState(App.getResetTimerState);
 
