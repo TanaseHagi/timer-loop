@@ -24,8 +24,8 @@ export class Logger extends React.PureComponent<ILoggerProps, ILoggerState> {
         logs: [...state.logs, props.timerState]
     });
 
-    private getLast<T>(array: T[]) {
-        return array[array.length - 1] || {};
+    private getLast<T>(array: T[]): ITimerState {
+        return array[array.length - 1] || {} as any;
     };
 
     componentDidMount() {
